@@ -41,13 +41,28 @@ def run(context, inputs):
             dy = (random.randint(min_jiggle, max_jiggle) *
                   random.choice([-1, 1]))
 
-            pyautogui.moveRel(dx, dy)
-            new_pos = list(pyautogui.position())
+            # --- 边界检查以防止 FailSafeException ---
+            # 获取屏幕尺寸
+            screen_width, screen_height = pyautogui.size()
+            # 获取当前鼠标位置
+            current_x, current_y = current_position
+            # 计算目标位置
+            target_x = current_x + dx
+            target_y = current_y + dy
 
-            context.logger.info(f"鼠标已从 {current_position} 移动到 {new_pos}。")
-
-            # 更新 current_position 为移动后的新位置
-            current_position = new_pos
+            # 检查目标位置是否在屏幕边界内
+            if 0 <= target_x < screen_width and 0 <= target_y < screen_height:
+                # 只有在安全的情况下才移动鼠标
+                pyautogui.moveRel(dx, dy)
+                new_pos = list(pyautogui.position())
+                context.logger.info(f"鼠标已从 {current_position} 移动到 {new_pos}。")
+                # 更新 current_position 为移动后的新位置
+                current_position = new_pos
+            else:
+                # 如果移动会超出边界，则记录日志并跳过本次移动
+                context.logger.debug(
+                    f"计划的鼠标移动 ({dx}, {dy}) 将超出屏幕边界。已取消本次移动以防止错误。")
+                # 保持 current_position 不变，以便下次检查
         else:
             # 非空闲或首次运行
             context.logger.debug(f"鼠标活动或首次运行。更新位置为 {current_position}。")

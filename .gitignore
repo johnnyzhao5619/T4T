@@ -25,3 +25,6 @@ SRS/
 
 # Ignore test directories
 tests/
+
+
+tasks/
