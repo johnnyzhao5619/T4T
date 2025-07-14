@@ -1,3 +1,7 @@
+[English](./README.md) | [简体中文](./README.zh-CN.md) | [Français](./README.fr.md)
+
+---
+
 # T4T - 可扩展的自动化任务执行器
 
 T4T (Task for Things) 是一个用 Python 和 PyQt 构建的、功能强大的自动化任务执行工具。它提供了一个图形化用户界面，用于创建、管理和监控各种自动化任务。T4T 的核心设计理念是模块化和可扩展性，允许用户通过开发自定义模块来无限扩展其功能。
@@ -24,7 +28,7 @@ T4T (Task for Things) 是一个用 Python 和 PyQt 构建的、功能强大的�
 
 1.  克隆本项目到本地:
     ```bash
-    git clone https://github.com/your-username/T4T.git
+    git clone https://github.com/johnnyzhao5619/T4T.git
     cd T4T
     ```
 
