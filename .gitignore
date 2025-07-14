@@ -1,0 +1,27 @@
+# Ignore virtual environment directories
+venv/
+.venv/
+
+# Ignore build directories
+build/
+dist/
+
+# Ignore Python package directories
+*.egg-info/
+
+# Ignore Python bytecode files
+__pycache__/
+utils/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore log files
+*.log
+logs/*.txt
+
+# Ignore Documentation files
+SRS/
+
+# Ignore test directories
+tests/
