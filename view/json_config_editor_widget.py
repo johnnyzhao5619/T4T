@@ -113,7 +113,6 @@ class JsonConfigEditorWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
 
         self.editor = QPlainTextEdit()
-        self.editor.setFont(QFont("Courier New", 10))
         self.highlighter = JsonSyntaxHighlighter(self.editor.document())
 
         self.update_editor_style()
@@ -139,8 +138,8 @@ class JsonConfigEditorWidget(QWidget):
                 "Could not load editor styles from %s: %s. Using defaults.",
                 theme_file, e)
 
-        border_color = theme_data.get("colors", {}).get(
-            "editorWidget.border", "#3c3c3c")
+        border_color = theme_data.get("colors",
+                                      {}).get("editorWidget.border", "#3c3c3c")
         self.editor.setStyleSheet(f"""
             QPlainTextEdit {{
                 background-color: {bg_color};
@@ -148,7 +147,6 @@ class JsonConfigEditorWidget(QWidget):
                 border: 1px solid {border_color};
                 font-family: 'Courier New', 'Lucida Console', 
                              'Monaco', monospace;
-                font-size: 10pt;
             }}
         """)
 

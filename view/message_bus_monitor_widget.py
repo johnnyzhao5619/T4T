@@ -131,12 +131,12 @@ class MessageBusMonitorWidget(QWidget):
     def _create_stat_label(self, text):
         label = QLabel(text)
         label.setAlignment(Qt.AlignRight)
-        label.setStyleSheet("font-weight: bold; font-size: 14px;")
+        label.setStyleSheet("font-weight: bold;")
         return label
 
     def _create_graph_panel(self):
         graph_panel = pg.PlotWidget()
-        graph_panel.setTitle(_("Message Rate (msg/s)"), size="12pt")
+        graph_panel.setTitle(_("Message Rate (msg/s)"))
         graph_panel.setLabel('left', _("Rate"))
         graph_panel.setLabel('bottom', _("Time (s)"))
         graph_panel.showGrid(x=True, y=True)

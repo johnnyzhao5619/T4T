@@ -153,5 +153,12 @@
   "Time (s)": "Time (s)",
   "clients": "clients",
   "Host:": "Host:",
-  "Port:": "Port:"
+  "Port:": "Port:",
+  "font_family_label": "Font:",
+  "font_size_label": "Font Size:",
+  "font_size_smallest": "Smallest",
+  "font_size_small": "Small",
+  "font_size_normal": "Normal",
+  "font_size_large": "Large",
+  "font_size_largest": "Largest"
 }

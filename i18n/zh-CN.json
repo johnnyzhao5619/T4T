@@ -153,5 +153,12 @@
   "Time (s)": "时间 (秒)",
   "clients": "客户端",
   "Host:": "主机:",
-  "Port:": "端口:"
+  "Port:": "端口:",
+  "font_family_label": "字体:",
+  "font_size_label": "字体大小:",
+  "font_size_smallest": "最小",
+  "font_size_small": "小",
+  "font_size_normal": "正常",
+  "font_size_large": "大",
+  "font_size_largest": "最大"
 }

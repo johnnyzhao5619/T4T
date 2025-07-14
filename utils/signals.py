@@ -28,6 +28,8 @@ class GlobalSignals(QObject):
     # UI-related signals
     theme_changed = pyqtSignal(str)  # theme_name
     language_changed = pyqtSignal(str)  # language_code
+    font_family_changed = pyqtSignal(str)  # font_family
+    ui_scaling_changed = pyqtSignal(float)  # scaling_factor
     modules_updated = pyqtSignal()
 
     # Message bus signals

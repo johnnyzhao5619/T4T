@@ -5,6 +5,7 @@ import shutil
 import json
 from functools import partial
 from PyQt5.QtWidgets import (
+    QApplication,
     QMainWindow,
     QWidget,
     QHBoxLayout,
@@ -27,6 +28,7 @@ from view.detail_area_widget import DetailAreaWidget
 from view.message_bus_monitor_widget import MessageBusMonitorWidget
 from utils.i18n import language_manager, _
 from utils.theme import theme_manager
+from utils.config import ConfigManager
 from utils.icon_manager import get_icon, set_theme as set_icon_theme
 from utils.signals import global_signals
 from utils.message_bus import message_bus_manager, BusConnectionState
@@ -67,7 +69,8 @@ class DevGuideWidget(QWidget):
             from utils.i18n import language_manager
             lang = language_manager.current_language
 
-            app_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            app_root = os.path.dirname(
+                os.path.dirname(os.path.abspath(__file__)))
 
             manual_name = "development_guide.md"
             base_name, ext = os.path.splitext(manual_name)
@@ -86,7 +89,7 @@ class DevGuideWidget(QWidget):
             else:
                 self.text_browser.setText(_("dev_guide_not_found"))
                 logger.error(f"Development guide not found at {final_path}")
-        except Exception as e:
+        except Exception:
             self.text_browser.setText(_("dev_guide_not_found"))
             logger.exception("Failed to load and render development guide.")
 
@@ -175,6 +178,7 @@ class T4TMainWindow(QMainWindow):
         # Connect to signals for dynamic updates
         language_manager.language_changed.connect(self.retranslate_ui)
         theme_manager.theme_changed.connect(self.on_theme_changed)
+        global_signals.theme_changed.connect(self.refresh_theme)
         global_signals.task_manager_updated.connect(self.update_status_bar)
         global_signals.execute_in_main_thread.connect(
             self.execute_task_in_main_thread)
@@ -182,12 +186,74 @@ class T4TMainWindow(QMainWindow):
             self._update_message_bus_status)
         global_signals.service_state_changed.connect(
             self.on_service_state_changed)
+        global_signals.ui_scaling_changed.connect(self.on_ui_scaling_changed)
+        global_signals.font_family_changed.connect(self.update_font_family)
 
         # Start tasks that are marked as enabled in their config
         self.autostart_enabled_tasks()
 
         # Initially connect the message bus
         message_bus_manager.connect()
+
+        # Set initial font size and family from config
+        self.apply_global_style()
+
+    def apply_global_style(self):
+        """
+        Sets all dynamic style properties (font size, family) and then
+        re-applies the current theme's stylesheet to ensure all changes
+        are rendered correctly. This is the definitive method for updating
+        the application's look and feel.
+        """
+        config = ConfigManager()
+        app = QApplication.instance()
+        if not app:
+            return
+
+        # 1. Set Font Size Property
+        try:
+            level = int(config.get('appearance', 'font_size_level', 2))
+        except (ValueError, TypeError):
+            level = 2
+        font_sizes = {0: 12, 1: 13, 2: 14, 3: 15, 4: 16}
+        base_font_size = 14
+        size_px = font_sizes.get(level, base_font_size)
+        app.setProperty("fontSize", f"{size_px}px")
+
+        # 2. Set Font Family Property
+        font_family = config.get('appearance', 'font_family', 'Segoe UI')
+        app.setProperty("fontFamily", font_family)
+
+        # 3. Re-apply the current theme's stylesheet
+        # This forces Qt to re-evaluate the QSS with the new properties
+        theme_manager.apply_theme(theme_manager.current_theme_name)
+
+        # 4. Emit scaling signal for widgets that need manual adjustments
+        scaling_factor = size_px / base_font_size
+        global_signals.ui_scaling_changed.emit(scaling_factor)
+
+    def update_font_family(self, font_family=None):
+        """
+        Slot for when the font family is changed in settings.
+        Triggers a global style refresh.
+        """
+        # The config is the source of truth, so we just need to trigger a refresh.
+        self.apply_global_style()
+
+    def update_font_size(self):
+        """
+        Slot for when the font size is changed in settings.
+        Triggers a global style refresh.
+        """
+        # The config is the source of truth, so we just need to trigger a refresh.
+        self.apply_global_style()
+
+    def on_ui_scaling_changed(self, factor: float):
+        """Adjusts UI elements that need explicit size changes."""
+        # Scale toolbar icon sizes
+        base_icon_size = 24  # The original, unscaled size
+        scaled_size = int(base_icon_size * factor)
+        self.toolbar.setIconSize(QSize(scaled_size, scaled_size))
 
     def execute_task_in_main_thread(self, task_name: str):
         """
@@ -263,8 +329,16 @@ class T4TMainWindow(QMainWindow):
         used for any component-specific updates if needed in the future.
         """
         logger.info(f"Theme changed to {theme_manager.current_theme_name}.")
+        self.refresh_theme()
+
+    def refresh_theme(self):
+        """
+        Refreshes theme-dependent elements like icons.
+        """
         set_icon_theme(theme_manager.current_theme_name)
         self.setup_toolbar_icons()
+        # Optionally, re-translate UI if some elements depend on theme + lang
+        # self.retranslate_ui()
         pass
 
     def setup_ui(self):

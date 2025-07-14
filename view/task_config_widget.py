@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QLineEdit, QCheckBox,
                              QDateTimeEdit, QFormLayout)
 from PyQt5.QtCore import Qt, pyqtSignal, QDateTime
 from utils.icon_manager import get_icon
-
+from utils.signals import global_signals
 from utils.i18n import _
 from view.components.separator import Separator
 
@@ -54,7 +54,17 @@ class TaskConfigWidget(QWidget):
         self.trigger_widget = None
         self.inputs_widget = None
 
+        # Store base sizes for scaling
+        self.base_title_bar_height = 50
+        self.base_form_spacing = 15
+
         self.init_ui()
+        global_signals.ui_scaling_changed.connect(self.on_ui_scaling_changed)
+
+    def on_ui_scaling_changed(self, factor: float):
+        """Adjusts UI elements based on the scaling factor."""
+        self.title_bar.setFixedHeight(int(self.base_title_bar_height * factor))
+        self.form_layout.setSpacing(int(self.base_form_spacing * factor))
 
     def init_ui(self):
         self.main_layout = QVBoxLayout(self)
@@ -116,7 +126,7 @@ class TaskConfigWidget(QWidget):
     def _create_title_bar(self):
         title_bar = QWidget()
         title_bar.setObjectName("configTitleBar")
-        title_bar.setFixedHeight(50)
+        title_bar.setFixedHeight(self.base_title_bar_height)
         title_layout = QHBoxLayout(title_bar)
         title_layout.setContentsMargins(15, 0, 15, 0)
 
@@ -125,7 +135,7 @@ class TaskConfigWidget(QWidget):
 
         self.title_label = QLabel("Settings")
         self.title_label.setObjectName("configTitleLabel")
-        self.title_label.setStyleSheet("font-size: 18px; font-weight: bold;")
+        self.title_label.setStyleSheet("font-weight: bold;")
 
         title_layout.addWidget(self.title_icon)
         title_layout.addWidget(self.title_label)
@@ -181,7 +191,6 @@ class TaskConfigWidget(QWidget):
         group_label = QLabel(label_text)
         group_label.setObjectName(f"group_label_{key}")
         group_label.setStyleSheet("""
-            font-size: 16px; 
             font-weight: bold; 
             margin-top: 10px;
         """)
@@ -238,7 +247,6 @@ class TaskConfigWidget(QWidget):
         group_label = QLabel(label_text)
         group_label.setObjectName("group_label_trigger")
         group_label.setStyleSheet("""
-            font-size: 16px; 
             font-weight: bold; 
             margin-top: 10px;
         """)
@@ -354,7 +362,6 @@ class TaskConfigWidget(QWidget):
         group_label = QLabel(label_text)
         group_label.setObjectName("group_label_inputs")
         group_label.setStyleSheet("""
-            font-size: 16px; 
             font-weight: bold; 
             margin-top: 10px;
         """)

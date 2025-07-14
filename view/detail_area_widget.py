@@ -29,7 +29,7 @@ class WelcomeWidget(QWidget):
 
         text_label = QLabel(_("welcome_message"))
         text_label.setAlignment(Qt.AlignCenter)
-        text_label.setStyleSheet("font-size: 18px; color: gray;")
+        text_label.setStyleSheet("color: gray;")
 
         layout.addWidget(icon_label)
         layout.addWidget(text_label)

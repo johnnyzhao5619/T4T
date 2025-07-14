@@ -8,8 +8,8 @@ QMainWindow, QDialog {
 QWidget {
     background-color: #ecf0f1;
     color: #2c3e50;
-    font-family: "Segoe UI", Arial, sans-serif;
-    font-size: 14px;
+    font-family: qproperty-fontFamily;
+    font-size: qproperty-fontSize;
 }
 
 QMenuBar {

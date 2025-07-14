@@ -1,9 +1,10 @@
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QFormLayout, QComboBox,
                              QLabel, QListWidget, QPushButton, QHBoxLayout,
                              QFileDialog, QMessageBox, QListWidgetItem,
-                             QGroupBox, QScrollArea)
+                             QGroupBox, QScrollArea, QSlider, QMainWindow)
 from PyQt5.QtCore import Qt
 from utils.config import ConfigManager
+from PyQt5.QtWidgets import QApplication
 from utils.theme import theme_manager, switch_theme
 from utils.i18n import language_manager, switch_language, _
 from core.module_manager import module_manager
@@ -20,10 +21,20 @@ class SettingsWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.config_manager = ConfigManager()
+
+        # Store base sizes for scaling
+        self.base_form_spacing = 10
+
         self.init_ui()
         self.populate_and_connect()
         # Set an object name for styling
         self.setObjectName("SettingsWidget")
+
+        global_signals.ui_scaling_changed.connect(self.on_ui_scaling_changed)
+
+    def on_ui_scaling_changed(self, factor: float):
+        """Adjusts UI elements based on the scaling factor."""
+        self.form_layout.setSpacing(int(self.base_form_spacing * factor))
 
     def init_ui(self):
         main_layout = QVBoxLayout(self)
@@ -42,19 +53,40 @@ class SettingsWidget(QWidget):
         # --- Appearance and Language Group ---
         appearance_group = QGroupBox(_("appearance_language_group_title"))
         appearance_group.setObjectName("appearance_language_group_title")
-        form_layout = QFormLayout(appearance_group)
-        form_layout.setLabelAlignment(Qt.AlignLeft)
-        form_layout.setFormAlignment(Qt.AlignLeft)
-        form_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
-        form_layout.setSpacing(10)
+        self.form_layout = QFormLayout(appearance_group)
+        self.form_layout.setLabelAlignment(Qt.AlignLeft)
+        self.form_layout.setFormAlignment(Qt.AlignLeft)
+        self.form_layout.setFieldGrowthPolicy(
+            QFormLayout.AllNonFixedFieldsGrow)
+        self.form_layout.setSpacing(self.base_form_spacing)
 
         self.theme_combo = QComboBox()
         self.theme_label = QLabel(_("theme_label"))
-        form_layout.addRow(self.theme_label, self.theme_combo)
+        self.form_layout.addRow(self.theme_label, self.theme_combo)
 
         self.language_combo = QComboBox()
         self.language_label = QLabel(_("language_label"))
-        form_layout.addRow(self.language_label, self.language_combo)
+        self.form_layout.addRow(self.language_label, self.language_combo)
+
+        # --- Font Family ComboBox ---
+        self.font_family_combo = QComboBox()
+        self.font_family_label = QLabel(_("font_family_label"))
+        self.form_layout.addRow(self.font_family_label,
+                                self.font_family_combo)
+
+        # --- Font Size Slider ---
+        self.font_size_label = QLabel(_("font_size_label"))
+        self.font_size_slider = QSlider(Qt.Horizontal)
+        self.font_size_slider.setRange(0, 4)
+        self.font_size_slider.setTickInterval(1)
+        self.font_size_slider.setTickPosition(QSlider.TicksBelow)
+        self.current_font_size_label = QLabel()
+
+        font_slider_layout = QHBoxLayout()
+        font_slider_layout.addWidget(self.font_size_slider)
+        font_slider_layout.addSpacing(10)
+        font_slider_layout.addWidget(self.current_font_size_label)
+        self.form_layout.addRow(self.font_size_label, font_slider_layout)
 
         container_layout.addWidget(appearance_group)
 
@@ -82,11 +114,16 @@ class SettingsWidget(QWidget):
     def populate_and_connect(self):
         self.populate_themes()
         self.populate_languages()
+        self.populate_font_families()
+        self.load_font_size_setting()
         self.populate_modules()
 
         self.theme_combo.currentTextChanged.connect(self.on_theme_changed)
         self.language_combo.currentTextChanged.connect(
             self.on_language_changed)
+        self.font_family_combo.currentTextChanged.connect(
+            self.on_font_family_changed)
+        self.font_size_slider.valueChanged.connect(self.on_font_size_changed)
         self.import_module_button.clicked.connect(self.import_module)
 
         global_signals.language_changed.connect(self.retranslate_ui)
@@ -118,6 +155,22 @@ class SettingsWidget(QWidget):
         self.language_combo.setCurrentText(current_lang_name)
         self.language_combo.blockSignals(False)
 
+    def populate_font_families(self):
+        # Common cross-platform fonts
+        fonts = [
+            "Segoe UI", "Arial", "Verdana", "Tahoma", "Calibri", "Helvetica",
+            "Times New Roman", "Courier New", "Consolas", "Monaco"
+        ]
+        current_font = self.config_manager.get('appearance', 'font_family',
+                                               "Segoe UI")
+
+        self.font_family_combo.blockSignals(True)
+        self.font_family_combo.clear()
+        self.font_family_combo.addItems(fonts)
+        if current_font in fonts:
+            self.font_family_combo.setCurrentText(current_font)
+        self.font_family_combo.blockSignals(False)
+
     def on_theme_changed(self, theme_name):
         if theme_name:
             switch_theme(theme_name)
@@ -130,6 +183,44 @@ class SettingsWidget(QWidget):
             if lang_code:
                 switch_language(lang_code)
                 self.config_manager.set('appearance', 'language', lang_code)
+
+    def on_font_family_changed(self, font_family):
+        if font_family:
+            self.config_manager.set('appearance', 'font_family', font_family)
+            global_signals.font_family_changed.emit(font_family)
+
+    def load_font_size_setting(self):
+        try:
+            level = self.config_manager.get('appearance', 'font_size_level', 2)
+            level = int(level)
+        except (ValueError, TypeError):
+            level = 2
+
+        self.font_size_slider.blockSignals(True)
+        self.font_size_slider.setValue(level)
+        self.font_size_slider.blockSignals(False)
+        self.update_font_size_label(level)
+
+    def on_font_size_changed(self, level):
+        self.config_manager.set('appearance', 'font_size_level', str(level))
+        self.update_font_size_label(level)
+
+        # Get the main window and call its update_font_size method
+        main_window = next((w for w in QApplication.topLevelWidgets()
+                            if isinstance(w, QMainWindow)), None)
+        if main_window:
+            main_window.update_font_size()
+
+    def update_font_size_label(self, level):
+        size_names = {
+            0: _("font_size_smallest"),
+            1: _("font_size_small"),
+            2: _("font_size_normal"),
+            3: _("font_size_large"),
+            4: _("font_size_largest"),
+        }
+        self.current_font_size_label.setText(
+            size_names.get(level, _("font_size_normal")))
 
     def populate_modules(self):
         self.module_list_widget.clear()
@@ -186,6 +277,9 @@ class SettingsWidget(QWidget):
 
         self.theme_label.setText(_("theme_label"))
         self.language_label.setText(_("language_label"))
+        self.font_family_label.setText(_("font_family_label"))
+        self.font_size_label.setText(_("font_size_label"))
+        self.update_font_size_label(self.font_size_slider.value())
 
         self.import_module_button.setText(_("import_module_button"))
         self.populate_modules()

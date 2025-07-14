@@ -1,6 +1,7 @@
 import os
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QApplication
+from utils.config import ConfigManager
 
 
 class ThemeManager(QObject):
